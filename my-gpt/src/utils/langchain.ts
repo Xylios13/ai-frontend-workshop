@@ -1,39 +1,56 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
+import {
+  ChatPromptTemplate,
+  FewShotChatMessagePromptTemplate,
+} from "@langchain/core/prompts";
 
 const llm = new ChatOpenAI({
-    openAIApiKey: import.meta.env.VITE_OPENAI_KEY,
-    temperature: 1,
-    modelName: "gpt-4-0125-preview",
+  openAIApiKey: import.meta.env.VITE_OPENAI_KEY,
+  temperature: 1,
+  modelName: "gpt-4-0125-preview",
 });
 
 export async function generateAnswer(
-    question: string,
-    promptTemplate: string = "Take the role of a {role}, that answers questions in a {style} way.",
-    role: string = "Personal travel assistant",
-    style: string = "consistent"
+  question: string,
+  promptTemplate: string = "Take the role of a Personal travel assistant, that answers questions in a consistent way.",
 ) {
-    let answer = ''
+  let answer = "";
 
-    const chatPrompt = ChatPromptTemplate.fromMessages([
-        ["system", promptTemplate],
-        ["human", '{question}'],
-    ])
+  const examples = [
+    {
+      input: "What are the best restaurants in Amsterdam?",
+      output: "The highest rated restaurants in Amsterdam are (1), (2), (3)",
+    },
+    {
+      input: "What is the best time of the year to visit The Netherlands?",
+      output: "Summer",
+    },
+  ];
 
-    const formattedPrompt = await chatPrompt.formatMessages({
-        role,
-        style,
-        question
-    });
+  const examplePrompt = ChatPromptTemplate.fromTemplate(
+    `Human: {input} AI: {output}`
+  );
 
-    try {
-        const result = await llm.invoke(formattedPrompt);
+  const fewShotPrompt = new FewShotChatMessagePromptTemplate({
+    prefix: promptTemplate,
+    suffix: "Human: {input}",
+    examplePrompt,
+    examples,
+    inputVariables: ["input"],
+  });
 
-        answer = result?.content as string
+  const formattedPrompt = await fewShotPrompt.format({
+    input: question,
+  });
+  console.log('👾 ~ formattedPrompt:', formattedPrompt);
 
-    } catch (e) {
-        return 'Something went wrong'
-    }
+  try {
+    const result = await llm.invoke(formattedPrompt);
 
-    return answer
+    answer = result?.content as string;
+  } catch (e) {
+    return "Something went wrong";
+  }
+
+  return answer;
 }
