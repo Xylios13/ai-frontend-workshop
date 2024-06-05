@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { generateAnswer } from "./utils/langchain";
+import { useEffect, useState } from "react";
+import { generateAndStoreEmbeddings, generateAnswer } from "./utils/langchain";
 import Message from "./Message";
 import Loader from "./Loader";
 
@@ -7,6 +7,8 @@ export default function App() {
   const [question, setQuestion] = useState("");
   const [result, setResult] = useState({ question: "", answer: ""});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => { generateAndStoreEmbeddings() }, []);
 
   async function handleSubmitQuestion(input: string) {
     setLoading(true);
