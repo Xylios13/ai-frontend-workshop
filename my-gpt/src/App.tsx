@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { generateAnswer } from "./utils/langchain";
 import Message from "./Message";
+import Loader from "./Loader";
 
 export default function App() {
   const [question, setQuestion] = useState("");
-    const [result, setResult] = useState({ question: "", answer: ""});
+  const [result, setResult] = useState({ question: "", answer: ""});
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmitQuestion(input: string) {
-    setQuestion(input);
-    const answer = await generateAnswer(question);
+    setLoading(true);
+    setResult({ question: '', answer: ""});
+    setQuestion('');
+    const answer = await generateAnswer(input);
+    setLoading(false);
     setResult({ question, answer });
   }
 
@@ -24,9 +29,10 @@ export default function App() {
             <div className="h-full flex flex-col items-center text-sm dark:bg-gray-800">
               { result?.answer &&
                 <Message sender="ChatGPT"
-                      title={result.question}
-                      message={result.answer}/>
+                    title={result.question}
+                    message={result.answer}/>
               }
+              { loading && <Loader /> }
             </div>
           </div>
         </div>
