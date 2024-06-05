@@ -1,24 +1,39 @@
-import { OpenAI } from "@langchain/openai";
-import { PromptTemplate } from "@langchain/core/prompts";
+import { ChatOpenAI } from "@langchain/openai";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
 
-const llm = new OpenAI({ openAIApiKey: import.meta.env.VITE_OPENAI_KEY });
+const llm = new ChatOpenAI({
+    openAIApiKey: import.meta.env.VITE_OPENAI_KEY,
+    temperature: 1,
+    modelName: "gpt-4-0125-preview",
+});
 
-export async function generateAnswer(question: string) {
-  const prompt = PromptTemplate.fromTemplate(
-    `Take the role of a personal travel assistant, and answer the following question in detail: {question}?`
-  );
+export async function generateAnswer(
+    question: string,
+    promptTemplate: string = "Take the role of a {role}, that answers questions in a {style} way.",
+    role: string = "Personal travel assistant",
+    style: string = "consistent"
+) {
+    let answer = ''
 
-  let answer = ''
+    const chatPrompt = ChatPromptTemplate.fromMessages([
+        ["system", promptTemplate],
+        ["human", '{question}'],
+    ])
 
-  const formattedPrompt = await prompt.format({
-    question,
-  });
+    const formattedPrompt = await chatPrompt.formatMessages({
+        role,
+        style,
+        question
+    });
 
-  try {
-    answer = await llm.invoke(formattedPrompt);
-  } catch (e) {
-      return 'Something went wrong'
-  }
+    try {
+        const result = await llm.invoke(formattedPrompt);
 
-  return answer
+        answer = result?.content as string
+
+    } catch (e) {
+        return 'Something went wrong'
+    }
+
+    return answer
 }
